@@ -1,0 +1,109 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: #f4f6f9;
+  color: #222;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Modo escuro */
+.dark-mode {
+  background: #121212;
+  color: #ffffff;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #006241; /* Verde IFBA */
+  color: #fff;
+  border-bottom: 4px solid #00492f;
+}
+
+header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+header p {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+button {
+  background: #006241;
+  color: #fff;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:hover {
+  background: #008f5f;
+  transform: translateY(-3px);
+}
+
+.output {
+  background: #fff;
+  color: #333;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-left: 6px solid #006241;
+}
+
+.dark-mode .output {
+  background: #1e1e1e;
+  color: #fff;
+  border-left: 6px solid #00ff9f;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+  background: #f0f0f0;
+  border-top: 1px solid #ddd;
+  color: #444;
+}
+
+.dark-mode footer {
+  background: #1e1e1e;
+  color: #ccc;
+  border-top: 1px solid #333;
+}
