@@ -9,36 +9,32 @@ recognition.maxAlternatives = 1;
 
 var diagnostic = document.querySelector('.output');
 
-// Pontos do campus (nós)
+// Pontos do campus (nós) - coordenadas reais
 const pontos = {
-  entrada: { lat: -11.1810, lng: -40.5100 },
-  corredor1: { lat: -11.1812, lng: -40.5105 },
-  corredor2: { lat: -11.1815, lng: -40.5110 },
-  cantina: { lat: -11.1820, lng: -40.5120 },
-  depen: { lat: -11.1810, lng: -40.5110 },
-  direcao: { lat: -11.1815, lng: -40.5115 },
-  direcao_ensino: { lat: -11.1845, lng: -42.5125 },
-  banheiros: { lat: -11.1822, lng: -40.5105 },
-  lab01: { lat: -11.1830, lng: -40.5122 },
-  capine: { lat: -11.1818, lng: -40.5130 },
-  setor_pedagogico: { lat: -11.1825, lng: -40.5118 },
-  auditorio: { lat: -11.1835, lng: -40.5125 }
+  entrada: { lat: -11.1820000, lng: -40.536900 }, // Entrada principal (adicione a coordenada real se necessário)
+  bifurcacao1: { lat: -11.1823076, lng: -40.536858 }, // Primeira bifurcação
+  bifurcacao2: { lat: -11.1822864, lng: -40.5366955 }, // Segunda bifurcação
+  direcao_ensino: { lat: -11.182414, lng: -40.5367314 },
+  direcao: { lat: -11.1829314, lng: -40.5370565 }, // Direção Geral
+  gabinete: { lat: -11.1829577, lng: -40.5371 },
+  gabinete_comunicacao: { lat: -11.1825766, lng: -40.5368283 }, // Gabinete de comunicação e audiovisual
+  setor_pedagogico: { lat: -11.1827908, lng: -40.5370218 },
+  capne: { lat: -11.1828657, lng: -40.5370838 },
+  cores: { lat: -11.182339, lng: -40.5367162 }
 };
 
-// Grafo (arestas)
+// Grafo (arestas) - conexões baseadas no mapa
 const grafo = {
-  entrada: ["corredor1"],
-  corredor1: ["entrada", "corredor2"],
-  corredor2: ["corredor1", "cantina", "depen", "direcao", "direcao_ensino"], // conectando direcao_ensino
-  cantina: ["corredor2", "lab01"],
-  depen: ["corredor2"],
-  direcao: ["corredor2"],
-  direcao_ensino: ["corredor2"], // agora tem conexão
-  lab01: ["cantina", "auditorio"],
-  auditorio: ["lab01"],
-  banheiros: ["corredor2"],
-  capine: ["corredor2"],
-  setor_pedagogico: ["corredor2"]
+  entrada: ["bifurcacao1"],
+  bifurcacao1: ["entrada", "bifurcacao2", "gabinete_comunicacao"],
+  gabinete_comunicacao: ["bifurcacao1"],
+  bifurcacao2: ["bifurcacao1", "direcao_ensino", "direcao", "gabinete", "setor_pedagogico", "capne", "cores"],
+  direcao_ensino: ["bifurcacao2"],
+  direcao: ["bifurcacao2", "gabinete"],
+  gabinete: ["direcao", "bifurcacao2"],
+  setor_pedagogico: ["bifurcacao2"],
+  capne: ["bifurcacao2"],
+  cores: ["bifurcacao2"]
 };
 
 // Calcula distância Haversine
@@ -79,31 +75,50 @@ function dijkstra(grafo, inicio, fim) {
   return {caminho, distancia: dist[fim]};
 }
 
+// Função para narrar o caminho
+function narrarCaminho(texto) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(texto);
+    utter.lang = 'pt-BR';
+    window.speechSynthesis.speak(utter);
+  }
+}
+
 // Função para ir até o local
 function irPara(local) {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(function(position) {
-      let minhaLat = position.coords.latitude;
-      let minhaLng = position.coords.longitude;
-
-      // Ponto mais próximo do usuário (simplificado: entrada)
-      let inicio = "entrada";
+  // Ponto de início fixo: entrada
+  let inicio = "entrada";
       let fim = local;
 
       if(pontos[fim]) {
         let resultado = dijkstra(grafo, inicio, fim);
         let distancia = resultado.distancia;
-        let textoDistancia = distancia>=1000 ? (distancia/1000).toFixed(2)+" km" : Math.round(distancia)+" m";
-
-        diagnostic.textContent = `Rota até ${fim.toUpperCase()} (${textoDistancia}) → ${resultado.caminho.join(" → ")}`;
+        let textoDistancia = distancia>=1000 ? (distancia/1000).toFixed(2)+" quilômetros" : Math.round(distancia)+" metros";
+        let destinoFalado = fim.replace(/_/g, ' ')
+          .replace('direcao', 'direção geral')
+          .replace('direcao ensino', 'direção de ensino')
+          .replace('gabinete comunicacao', 'gabinete de comunicação e audiovisual')
+          .replace('setor pedagogico', 'setor pedagógico')
+          .replace('capne', 'CAPNE')
+          .replace('cores', 'corredor das cores')
+          .replace('bifurcacao1', 'primeira bifurcação')
+          .replace('bifurcacao2', 'segunda bifurcação');
+        let textoRota = `Rota até ${destinoFalado} (${textoDistancia}). Caminho: ${resultado.caminho.map(p=>p.replace(/_/g, ' ').replace('direcao', 'direção geral').replace('direcao ensino', 'direção de ensino').replace('gabinete comunicacao', 'gabinete de comunicação e audiovisual').replace('setor pedagogico', 'setor pedagógico').replace('capne', 'CAPNE').replace('cores', 'corredor das cores').replace('bifurcacao1', 'primeira bifurcação').replace('bifurcacao2', 'segunda bifurcação')).join(', ')}.`;
+        diagnostic.textContent = textoRota;
+        narrarCaminho(textoRota);
       } else {
         diagnostic.textContent = "Local não encontrado no mapa.";
+        narrarCaminho("Local não encontrado no mapa.");
       }
     }, function(error){
       diagnostic.textContent = "Erro ao acessar sua localização.";
+      narrarCaminho("Erro ao acessar sua localização.");
     });
   } else {
     diagnostic.textContent = "Seu navegador não suporta geolocalização.";
+    narrarCaminho("Seu navegador não suporta geolocalização.");
   }
 }
 
@@ -114,18 +129,14 @@ recognition.onresult = function(event) {
 
   switch(true) {
     case command.includes("modo escuro"):
-      document.body.classList.add("dark-mode"); // força ativar
+      document.body.classList.add("dark-mode");
       diagnostic.textContent = "Modo escuro ativado!";
+      narrarCaminho("Modo escuro ativado!");
       break;
     case command.includes("modo claro"):
-      document.body.classList.remove("dark-mode"); // força desativar
+      document.body.classList.remove("dark-mode");
       diagnostic.textContent = "Modo claro ativado!";
-      break;
-    case command.includes("depen"):
-      irPara("depen");
-      break;
-    case command.includes("cantina"):
-      irPara("cantina");
+      narrarCaminho("Modo claro ativado!");
       break;
     case command.includes("direção geral"):
       irPara("direcao");
@@ -133,25 +144,31 @@ recognition.onresult = function(event) {
     case command.includes("direção de ensino"):
       irPara("direcao_ensino");
       break;
-    case command.includes("banheiro"):
-    case command.includes("banheiros"):
-      irPara("banheiros");
+    case command.includes("gabinete"):
+      irPara("gabinete");
       break;
-    case command.includes("lab 01"):
-    case command.includes("laboratório 1"):
-      irPara("lab01");
-      break;
-    case command.includes("capine"):
-      irPara("capine");
+    case command.includes("gabinete de comunicação"):
+    case command.includes("comunicação"):
+      irPara("gabinete_comunicacao");
       break;
     case command.includes("setor pedagógico"):
       irPara("setor_pedagogico");
       break;
-    case command.includes("auditório"):
-      irPara("auditorio");
+    case command.includes("capne"):
+      irPara("capne");
+      break;
+    case command.includes("cores"):
+      irPara("cores");
+      break;
+    case command.includes("primeira bifurcação"):
+      irPara("bifurcacao1");
+      break;
+    case command.includes("segunda bifurcação"):
+      irPara("bifurcacao2");
       break;
     default:
       diagnostic.textContent = "Local não reconhecido. Tente novamente.";
+      narrarCaminho("Local não reconhecido. Tente novamente.");
   }
 }
 
